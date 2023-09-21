@@ -212,3 +212,85 @@ Tajima_D_plots
 
 # Save the output file locally
 ggsave("Tajima_D_plots.tiff", height = 6, width = 12, dpi = 300)
+
+
+
+#########################################################################################################
+#CSP c-terminal -tajima D and mucleotide diversity
+########################################################################################################
+
+# load packages 
+library(readxl)
+library(tidyverse)
+
+# load data 
+ nucleotide_diversity_homabay <- read_excel("c_terminal_scp.xlsx", sheet = 2, col_names = F)
+ nucleotide_diversity_kilifi <- read_excel("c_terminal_scp.xlsx", sheet = 4, col_names = F)
+ nucleotide_diversity_kisumu <- read_excel("c_terminal_scp.xlsx", sheet = 6, col_names = F)
+
+
+# Assign column names
+  colnames(nucleotide_diversity_homabay) <- c("range", "midpoint", "pi")
+  colnames(nucleotide_diversity_kisumu) <- c("range", "midpoint", "pi")
+  colnames(nucleotide_diversity_kilifi) <- c("range", "midpoint", "pi")
+
+  # extract relevant sequences 
+  
+  nucleotide_diversity_homabay <-  nucleotide_diversity_homabay %>%
+    select(midpoint, pi) %>%
+    mutate(position=midpoint +909) %>%
+    select(position, pi)
+
+nucleotide_diversity_kilifi <- nucleotide_diversity_kilifi %>%
+  select(midpoint, pi) %>%
+  mutate(position=midpoint +909) %>%
+  select(position, pi)
+
+nucleotide_diversity_kisumu <- nucleotide_diversity_kisumu %>%
+  select(midpoint, pi) %>%
+  mutate(position=midpoint +909) %>%
+  select(position, pi)
+
+# add an additional column indicating the individual regions where the samples come from 
+nucleotide_diversity_homabay$site <- "Homabay"
+nucleotide_diversity_kilifi$site <- "Kilifi"
+nucleotide_diversity_kisumu$site <- "Kisumu"
+
+# Join the three tables together 
+ nucleotide_diversity_csp <- rbind(nucleotide_diversity_homabay,
+                                   nucleotide_diversity_kisumu,
+                                   nucleotide_diversity_kilifi)
+ 
+ 
+ # Check structure of the data 
+str(nucleotide_diversity_csp)
+
+# convert sites into a factor
+nucleotide_diversity_csp$site <- as.factor(nucleotide_diversity_csp$site)
+
+# Plot the nucleotide diversity statistics
+c_terminal_pi <- ggplot(data=nucleotide_diversity_csp, aes(position, pi, color=site))+
+   geom_line(stat = "identity", linewidth= 1.0)+
+   theme_classic()+
+   xlab("Nucleotide position")+
+   ylab("pi")+
+   theme(axis.text = element_text(colour = "black"))+
+   theme(axis.title = element_text(colour = "black", face = "bold"))+
+   ggtitle("Nucleotide diversity TH2R and TH3R regions in C-terminal CSP")+
+   theme(plot.title = element_text(colour = "black", face = "bold", size = 12, hjust = 0.5))+
+  scale_fill_brewer(palette = "Dark2")+
+  ylim(0, 0.12)+
+  scale_x_continuous(breaks = seq(900,1150, 50), 
+                     labels = seq(900,1150, 50), 
+                     limits = c(900,1150))
+
+
+c_terminal_pi 
+
+
+
+
+
+
+
+
