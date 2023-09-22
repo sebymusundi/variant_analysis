@@ -39,7 +39,7 @@ frequency_plot <-  ggplot(data=allele_frequency, aes(Allele, Frequency, fill=Reg
   geom_bar(stat = "identity", position = position_dodge())+
   theme_classic()+
   coord_flip()+
-  scale_fill_brewer(palette = "Dark2")+
+  scale_color_brewer(palette = "Dark2")+
   xlab("Allele") +
   ylab("Frequency (%)")+
   theme(axis.text = element_text(colour = "black"))+
@@ -48,7 +48,7 @@ frequency_plot <-  ggplot(data=allele_frequency, aes(Allele, Frequency, fill=Reg
   ylim(0,100)
 
 frequency_plot
-ggsave("frequency_plot.tiff", height = 8, width = 12, dpi = 300)
+ggsave("frequency_plot.tiff", height = 9, width = 12, dpi = 300)
 
 ###############################################################################################################################
 # Calculating nucleotide diversity 
@@ -133,7 +133,7 @@ nucleotide_diversity <- plot_grid(AMA1_nucleotide_diversity,
                                   labels = c("A", "B", "C"), nrow = 1)
 nucleotide_diversity
 
-ggsave("nucleotide_diverstiy.tiff", width = 12, height = 6, dpi = 300)
+ggsave("nucleotide_diverstiy.tiff", width = 10, height = 6, dpi = 300)
 
 ##################################################################################################################################
 # Tajima D graphs 
@@ -271,22 +271,27 @@ nucleotide_diversity_csp$site <- as.factor(nucleotide_diversity_csp$site)
 # Plot the nucleotide diversity statistics
 c_terminal_pi <- ggplot(data=nucleotide_diversity_csp, aes(position, pi, color=site))+
    geom_line(stat = "identity", linewidth= 1.0)+
-   theme_classic()+
+
+     theme_classic()+
    xlab("Nucleotide position")+
    ylab("pi")+
-   theme(axis.text = element_text(colour = "black"))+
-   theme(axis.title = element_text(colour = "black", face = "bold"))+
-   ggtitle("Nucleotide diversity TH2R and TH3R regions in C-terminal CSP")+
+   theme(axis.text = element_text(colour = "black", size = 10))+
+   theme(axis.title = element_text(colour = "black", face = "bold", size = 11))+
    theme(plot.title = element_text(colour = "black", face = "bold", size = 12, hjust = 0.5))+
-  scale_fill_brewer(palette = "Dark2")+
+  scale_color_brewer(palette = "Set1")+
   ylim(0, 0.12)+
   scale_x_continuous(breaks = seq(900,1150, 50), 
                      labels = seq(900,1150, 50), 
-                     limits = c(900,1150))
+                     limits = c(900,1150))+
+  geom_vline(xintercept = c(930,981), linetype="dashed", color= "black") +
+  geom_vline(xintercept = c(1053,1089), linetype="dashed", color= "black") +
+  annotate(geom="text", label="Th3R", x= 1070, y= 0.120, color="black", fontface="bold")+
+  annotate(geom="text", label="Th2R", x= 950, y= 0.120, color="black", fontface="bold")
 
 
-c_terminal_pi 
+c_terminal_pi
 
+ggsave("c_terminal_pi.tiff", height = 6, width = 10, dpi = 300)
 
 
 
