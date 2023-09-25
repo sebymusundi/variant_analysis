@@ -14,6 +14,7 @@ library(tidyverse)
 library(RColorBrewer)
 library(cowplot)
 library(stringr)
+library(ggrepel)
 
 # Load data 
 allele_frequency <- read_excel("major_and_minor_substitutions.xlsx")
@@ -296,6 +297,54 @@ ggsave("c_terminal_pi.tiff", height = 6, width = 10, dpi = 300)
 
 
 
+#####################################################################################
+# Creating a haplotype network usng geneHapR package 
+# DNA sequences used are for the c-terminal
+###############################################################################
+
+# Load package 
+library(geneHapR)
+
+# load sequenced data 
+sequences <- import_seqs("mike_csp_c_terminal.fas", format = "fasta")
+
+# load metadata 
+sequences_metadata <- import_AccINFO("metadata_haplotype.tsv", sep="\t")
+?import_AccINFO
+# report haplotypes
+haplotype_result=seqs2hap(sequences, hapPrefix = "H", maxGapsPerSeq = 0.25,  Ref = names(sequences)[1])
+
+# Get concise result
+hapSummary <- hap_summary(haplotype_result)
+
+# Remove singletons present in the dataset
+accession_removed=as.character(hapSummary[74:116,24])
+haplotypes_removed=as.character(as.character(hapSummary[74:116,1]))
 
 
+# Filter haplotypes to remove singletons 
+hapSummary_filt=filter_hap(hapSummary, 
+                           rm.mode=c('haplotype', "accession"), 
+                           accession.rm = accession_removed, 
+                           haplotype.rm = haplotypes_removed)
 
+# Create haplotype network
+
+# 
+pdf("haplotype_map.pdf", height = 8, width = 12)
+
+# Assign colors to the different sites and reference (3D7)
+background_vector=c("magenta", "green", "#FC6A03", "yellow")
+
+# Create a file containing the metadata file
+hapNet <- get_hapNet(hapSummary_filt,
+                     AccINFO = sequences_metadata,
+                     groupName = "Site")
+
+# plot the haplotype network
+ plotHapNet(hapNet, size = "freq",  scale = 0.5, col.link = 1, 
+           labels.font = 4, labels.cex = 0.7, legend = c(-25,0), 
+           backGround =background_vector, labels.col = "black", show_size_legend = FALSE, 
+           show_color_legend = TRUE, cex = 0.3, show.mutation = 0)
+
+dev.off()
