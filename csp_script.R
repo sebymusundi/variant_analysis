@@ -348,3 +348,119 @@ hapNet <- get_hapNet(hapSummary_filt,
            show_color_legend = TRUE, cex = 0.3, show.mutation = 0)
 
 dev.off()
+
+################################################################################################
+# Extract haplotype information to analyze binding to MHC1 andMHC-II
+###############################################################################################
+
+# Extract haplotype ids with sequences
+haplotype_seq <- rownames(hapSummary_filt)
+haplotype_id <- hapSummary_filt[,1]
+
+# create a dataframe
+haplotype_df <- data.frame(haplotype_seq, haplotype_id, stringsAsFactors = TRUE)
+
+# remove the first four rows
+haplotype_df <- haplotype_df[5:73, ]
+
+# change haplotype seq name with Identity
+colnames(haplotype_df)[1] <- "Identity"
+
+# load libraries 
+library(readr)
+library(tidyverse)
+
+# Load data 
+HLA_class_I <-  read_table("hla_class_1_revised.tsv", col_names = FALSE, show_col_types = FALSE )
+HLA_class_II <- read_table("HLA_Class_II_CSP_Revised.tsv", col_names = FALSE, show_col_types = FALSE)
+
+
+# Assign column names to  HLA Class I 
+
+colnames(HLA_class_I) <- c("Pos", "MHC", "Peptide", "Core", "Of", "Gp", "Gl", "Ip", "IL", "Icore", "Identity", "Score_EL", "Rank_EL", 
+                           "Score_BA", "Aff(nM)", "BindLevel")
+colnames(HLA_class_II) <- c("Pos", "MHC", "Peptide", "Of", "Core", "Core_Rel", "Identity", 
+                            "Score_EL", "Rank_EL", "Exp_Bind", "Score_BA", "Affinity(nM)", "Rank_BA", "BindLevel")
+
+# filter columns for TH2R (311-327) - CD4+ region
+
+
+
+
+# FILTER columns for TH2R (311-327) - CD8+ region 
+
+HLA_class_II <- HLA_class_II %>%
+  filter(Pos <=330 & BindLevel %in% c("<=WB", "<=SB"))
+
+# Filter out to only remain with the top ranking allele per sample 
+
+HLA_class_II$Identity <- as.factor(HLA_class_II$Identity)
+HLA_class_II$MHC <- as.factor(HLA_class_II$MHC)
+
+levels(HLA_class_II$Identity)
+levels(HLA_class_II$MHC) 
+
+
+
+# Create heatmap 
+
+HLA_class_II_heatmap <-  HLA_class_II %>%
+  select(MHC, Identity, Rank_EL)
+
+
+# left join 
+new_heatmap_class_II  <- left_join(HLA_class_II_heatmap, haplotype_df, by="Identity")
+
+# Check structure of the data 
+str(new_heatmap_class_II)
+
+# Plot TH2R region 
+
+class_2_plot <- ggplot(data = new_heatmap_class_II, aes(haplotype_id, MHC, fill=Rank_EL )) +
+  geom_tile()+
+  xlab("Haplotype")+
+  ylab("MHCII allele")+
+  theme_classic()+
+  labs(fill="% Rank") +
+  theme(axis.text.x = element_text(angle = 90, colour = "black"))+
+  theme(axis.text.y = element_text(colour = "black"))+
+  scale_fill_gradient(low = "red", high = "green", limits=c(0,5))
+
+class_2_plot
+
+ggsave("class_2_plot.tiff", height = 8, width = 12, dpi = 300)
+
+
+# Analyze data for class 1 
+
+HLA_class_I <- HLA_class_I %>%
+  filter(Pos >= 347 & Pos <=368 & Rank_EL <=5.00)
+
+# subset data
+HLA_class_I_heatmap <-  HLA_class_I %>%
+  select(MHC, Identity, Rank_EL)
+
+# Convert to factors
+HLA_class_I_heatmap$MHC<- as.factor(HLA_class_I_heatmap$MHC)
+HLA_class_I_heatmap$Identity <- as.factor(HLA_class_I_heatmap$Identity)
+
+
+# Left join haplotypes with sequences 
+new_heatmap_class_I <- left_join(HLA_class_I_heatmap, haplotype_df, by="Identity")
+
+# Plot for MHCI
+
+class_1_plot <- ggplot(data = new_heatmap_class_I, aes(haplotype_id, MHC, fill=Rank_EL )) +
+  geom_tile()+
+  xlab("Haplotype")+
+  ylab("MHCI allele")+
+  theme_classic()+
+  labs(fill=" % Rank") +
+  theme(axis.text.x = element_text(angle = 90, colour = "black"))+
+  theme(axis.text.y = element_text(colour = "black"))+
+  scale_fill_gradient(low = "red", high = "green", limits=c(0,5))
+
+class_1_plot
+
+ggsave("class_1_plot.tiff", height = 8, width = 12, dpi = 300)
+
