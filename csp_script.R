@@ -352,6 +352,12 @@ dev.off()
 ################################################################################################
 # Extract haplotype information to analyze binding to MHC1 andMHC-II
 ###############################################################################################
+# Extract alleles with a frequency more than 1% in Kenyan population 
+ allele_kenya <- read_tsv("HLA_alleles.tsv", col_names = F)
+
+ allele_kenya <- allele_kenya %>%
+   filter(X5>5)
+
 
 # Extract haplotype ids with sequences
 haplotype_seq <- rownames(hapSummary_filt)
@@ -382,30 +388,38 @@ colnames(HLA_class_I) <- c("Pos", "MHC", "Peptide", "Core", "Of", "Gp", "Gl", "I
 colnames(HLA_class_II) <- c("Pos", "MHC", "Peptide", "Of", "Core", "Core_Rel", "Identity", 
                             "Score_EL", "Rank_EL", "Exp_Bind", "Score_BA", "Affinity(nM)", "Rank_BA", "BindLevel")
 
+HLA_class_II <- as.data.frame(HLA_class_II)
+
 # filter columns for TH2R (311-327) - CD4+ region
 
-
+HLA_class_II_edited <- HLA_class_II %>%
+  mutate(binding_class=case_when(Rank_EL <= 2.0 ~ "SB", 
+                                 Rank_EL > 2.0 & Rank_EL <=10 ~ "WB", 
+                                 .default = "other")) 
 
 
 # FILTER columns for TH2R (311-327) - CD8+ region 
 
-HLA_class_II <- HLA_class_II %>%
-  filter(Pos <=330 & BindLevel %in% c("<=WB", "<=SB"))
+HLA_class_II_edited <- HLA_class_II_edited %>%
+ filter(Pos <=330 & binding_class %in% c("WB", "SB"))
 
 # Filter out to only remain with the top ranking allele per sample 
 
-HLA_class_II$Identity <- as.factor(HLA_class_II$Identity)
-HLA_class_II$MHC <- as.factor(HLA_class_II$MHC)
+HLA_class_II_edited$Identity <- as.factor(HLA_class_II_edited$Identity)
+HLA_class_II_edited$MHC <- as.factor(HLA_class_II_edited$MHC)
 
-levels(HLA_class_II$Identity)
-levels(HLA_class_II$MHC) 
+levels(HLA_class_II_edited$Identity)
+levels(HLA_class_II_edited$MHC) 
 
 
 
 # Create heatmap 
 
-HLA_class_II_heatmap <-  HLA_class_II %>%
-  select(MHC, Identity, Rank_EL)
+HLA_class_II_heatmap <-  HLA_class_II_edited %>%
+  select(MHC, Identity, Rank_EL, binding_class) %>%
+  mutate(binding_class=as.factor(binding_class))
+
+
 
 
 # left join 
@@ -416,29 +430,40 @@ str(new_heatmap_class_II)
 
 # Plot TH2R region 
 
-class_2_plot <- ggplot(data = new_heatmap_class_II, aes(haplotype_id, MHC, fill=Rank_EL )) +
+class_2_plot <- ggplot(data = new_heatmap_class_II, aes(haplotype_id, MHC, fill=Rank_EL)) +
   geom_tile()+
   xlab("Haplotype")+
   ylab("MHCII allele")+
   theme_classic()+
-  labs(fill="% Rank") +
+  labs(fill="Binding class") +
   theme(axis.text.x = element_text(angle = 90, colour = "black"))+
   theme(axis.text.y = element_text(colour = "black"))+
-  scale_fill_gradient(low = "red", high = "green", limits=c(0,5))
+  scale_fill_gradient(low = "red", high = "green", 
+                      limits=c(0,10))
+
 
 class_2_plot
 
 ggsave("class_2_plot.tiff", height = 8, width = 12, dpi = 300)
 
 
+
+
+# Define classess for HLA class I strong or weak binding
+HLA_class_I_edited <- HLA_class_I %>%
+  mutate(binding_class=case_when(Rank_EL <= 0.5 ~ "SB", 
+                                 Rank_EL > 0.5 & Rank_EL <= 2.0 ~ "WB", 
+                                 .default = "other")) 
+
 # Analyze data for class 1 
 
-HLA_class_I <- HLA_class_I %>%
-  filter(Pos >= 347 & Pos <=368 & Rank_EL <=5.00)
+HLA_class_I_edited <- HLA_class_I_edited %>%
+  filter(Pos >= 347 & Pos <=368 & binding_class %in% c("WB", "SB")) %>%
+  mutate(binding_class=as.factor(binding_class))
 
 # subset data
-HLA_class_I_heatmap <-  HLA_class_I %>%
-  select(MHC, Identity, Rank_EL)
+HLA_class_I_heatmap <-  HLA_class_I_edited %>%
+  select(MHC, Identity, Rank_EL, binding_class)
 
 # Convert to factors
 HLA_class_I_heatmap$MHC<- as.factor(HLA_class_I_heatmap$MHC)
@@ -448,17 +473,20 @@ HLA_class_I_heatmap$Identity <- as.factor(HLA_class_I_heatmap$Identity)
 # Left join haplotypes with sequences 
 new_heatmap_class_I <- left_join(HLA_class_I_heatmap, haplotype_df, by="Identity")
 
+
+# Check data structure
 # Plot for MHCI
 
-class_1_plot <- ggplot(data = new_heatmap_class_I, aes(haplotype_id, MHC, fill=Rank_EL )) +
+class_1_plot <- ggplot(data = new_heatmap_class_I, aes(haplotype_id, MHC, fill=Rank_EL)) +
   geom_tile()+
   xlab("Haplotype")+
   ylab("MHCI allele")+
   theme_classic()+
-  labs(fill=" % Rank") +
+  labs(fill=" Binding class") +
   theme(axis.text.x = element_text(angle = 90, colour = "black"))+
   theme(axis.text.y = element_text(colour = "black"))+
-  scale_fill_gradient(low = "red", high = "green", limits=c(0,5))
+  scale_fill_gradient(low = "red", high = "green", 
+                      limits=c(0,2))
 
 class_1_plot
 
