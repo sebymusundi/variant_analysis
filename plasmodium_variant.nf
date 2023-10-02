@@ -13,7 +13,7 @@ println "outdir: $params.outdir"
 
 
 log.info """\
-                        whole genome sequencing SARS-CoV-2
+                        Plasmodium falciparum WGS variation analysis
                         ------------------------------------------
                         reads:       "$params.reads"
                         reference:   "$params.reference"
