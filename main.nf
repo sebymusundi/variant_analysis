@@ -12,8 +12,6 @@ log.info """\
                 .stripIndent()
 
 
-// Quality control using fastqc
-
 
 // Quality control using fastqc
 
