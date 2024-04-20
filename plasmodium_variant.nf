@@ -1,16 +1,5 @@
 #! /usr/bin/nextflow 
 
-params.reads='/home/bioinfo/plasmodium_data/raw_data/*_{1,2}.fq.gz'
-params.outdir='/home/bioinfo/plasmodium_data/results/'
-params.reference='/home/bioinfo/plasmodium_data/raw_data/Pfalciparum.genome.fasta'
-
-
-println "reads: $params.reads"
-println "reference: $params.reference"
-println "outdir: $params.outdir"
-
-
-
 
 log.info """\
                         Plasmodium falciparum WGS variation analysis
